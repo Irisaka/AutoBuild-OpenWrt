@@ -5,7 +5,7 @@
 # Youtube Channel: https://goo.gl/fvkdwm 
 #=================================================
 
-name: Build_x86_64
+name: Build_x86_64_20240206
 
 # Add a button to trigger the workflow
 on: 
@@ -95,6 +95,9 @@ jobs:
         git clone --depth 1 $REPO_URL -b $REPO_BRANCH openwrt
         cd openwrt
         echo "src-git ssrp https://github.com/fw876/helloworld.git" >> ./feeds.conf.default
+        echo "src-git small https://github.com/kenzok8/small.git" >> ./feeds.conf.default
+        echo "src-git kenzo https://github.com/kenzok8/openwrt-packages.git" >> ./feeds.conf.default
+        echo "src-git passwall https://github.com/xiaorouji/openwrt-passwall.git" >> ./feeds.conf.default
         
     - name: Update & Install feeds
       working-directory: ./openwrt
@@ -102,6 +105,11 @@ jobs:
         ./scripts/feeds update -a
         ./scripts/feeds install -a
         ./scripts/feeds install -a
+
+    - name: Import external feeds - iptvhelper
+      working-directory: ./openwrt
+      run: |
+        git clone https://github.com/riverscn/openwrt-iptvhelper.git package/openwrt-iptvhelper
 
     #- name: Import external feeds - passwall
     #  working-directory: ./openwrt
@@ -114,9 +122,17 @@ jobs:
     #  run: |
     #    git clone -b 18.06 https://github.com/jerrykuku/luci-theme-argon.git package/luci-theme-argon-jerrykuku
 
+    - name: Change theme
+      working-directory: ./openwrt
+      run: |
+        rm -rf package/lean/luci-theme-argon
+        find ./ -name luci-theme-argon | xargs rm -rf
+        git clone -b 18.06 https://github.com/jerrykuku/luci-theme-argon.git package/lean/luci-theme-argon
+        sed -i 's/luci-theme-bootstrap/luci-theme-argon/' feeds/luci/collections/luci/Makefile
+
     - name: Configuration Customization - Build_x86_64
       env:
-        CONFIG_FILE: 'x86_64.config'
+        CONFIG_FILE: 'x86_64_20240206.config'
       run: |
         [ -e $CONFIG_FILE ] && mv $CONFIG_FILE openwrt/.config
         chmod +x ./customize.sh && ./customize.sh
